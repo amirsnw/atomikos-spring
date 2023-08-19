@@ -14,8 +14,6 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 
 import javax.sql.DataSource;
-import java.util.HashMap;
-import java.util.Map;
 
 @Configuration
 @EnableJpaRepositories(
@@ -25,22 +23,17 @@ import java.util.Map;
 )
 public class CustomerDataSourceConfiguration {
 
-    public Map<String, String> customerJpaProperties() {
-        Map<String, String> customerJpaProperties = new HashMap<>();
-        customerJpaProperties.put("hibernate.hbm2ddl.auto", "validate");
-        customerJpaProperties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
-        customerJpaProperties.put("hibernate.show_sql", "true");
-        customerJpaProperties.put("hibernate.temp.use_jdbc_metadata_defaults", "false");
-        customerJpaProperties.put("hibernate.transaction.jta.platform", "com.atomikos.icatch.jta.hibernate4.AtomikosPlatform");
-        customerJpaProperties.put("javax.persistence.transactionType", "JTA");
-        return customerJpaProperties;
+    private final JpaProperties jpaProperties;
+
+    public CustomerDataSourceConfiguration(JpaProperties jpaProperties) {
+        this.jpaProperties = jpaProperties;
     }
 
     @Bean(name = "customerEntityManagerFactoryBuilder")
     @Primary
     public EntityManagerFactoryBuilder customerEntityManagerFactoryBuilder() {
         return new EntityManagerFactoryBuilder(
-                new HibernateJpaVendorAdapter(), customerJpaProperties(), null
+                new HibernateJpaVendorAdapter(), jpaProperties.getProperties(), null
         );
     }
 
@@ -55,7 +48,7 @@ public class CustomerDataSourceConfiguration {
                 .dataSource(postgresDataSource)
                 .packages("com.kloia.atomikos.model.customer")
                 .persistenceUnit("postgres")
-                .properties(customerJpaProperties())
+                .properties(jpaProperties.getProperties())
                 .jta(true)
                 .build();
     }

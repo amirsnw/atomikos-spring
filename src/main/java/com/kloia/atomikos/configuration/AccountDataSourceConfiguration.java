@@ -13,8 +13,6 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 
 import javax.sql.DataSource;
-import java.util.HashMap;
-import java.util.Map;
 
 @Configuration
 @EnableJpaRepositories(
@@ -24,23 +22,17 @@ import java.util.Map;
 )
 public class AccountDataSourceConfiguration {
 
-    public Map<String, String> accountJpaProperties() {
-        Map<String, String> accountJpaProperties = new HashMap<>();
-        accountJpaProperties.put("hibernate.hbm2ddl.auto", "validate");
-        accountJpaProperties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
-        accountJpaProperties.put("hibernate.show_sql", "true");
-        accountJpaProperties.put("hibernate.temp.use_jdbc_metadata_defaults", "false");
-        accountJpaProperties.put("hibernate.transaction.jta.platform", "com.atomikos.icatch.jta.hibernate4.AtomikosPlatform");
-        accountJpaProperties.put("javax.persistence.transactionType", "JTA");
-        return accountJpaProperties;
-    }
+    private final JpaProperties jpaProperties;
 
+    public AccountDataSourceConfiguration(JpaProperties jpaProperties) {
+        this.jpaProperties = jpaProperties;
+    }
 
     @Bean(name = "accountEntityManagerFactoryBuilder")
 //    @Primary
     public EntityManagerFactoryBuilder accountEntityManagerFactoryBuilder() {
         return new EntityManagerFactoryBuilder(
-                new HibernateJpaVendorAdapter(), accountJpaProperties(), null
+                new HibernateJpaVendorAdapter(), jpaProperties.getProperties(), null
         );
     }
 
@@ -55,7 +47,7 @@ public class AccountDataSourceConfiguration {
                 .dataSource(postgresDataSource)
                 .packages("com.kloia.atomikos.model.account")
                 .persistenceUnit("postgres")
-                .properties(accountJpaProperties())
+                .properties(jpaProperties.getProperties())
                 .jta(true)
                 .build();
     }
@@ -72,7 +64,6 @@ public class AccountDataSourceConfiguration {
 //    @Primary
     @ConfigurationProperties("datasource.account")
     public DataSource accountDataSource(@Qualifier("accountDataSourceProperties") DataSourceProperties accountDataSourceProperties) {
-        // return accountDataSourceProperties.initializeDataSourceBuilder().build();
         PGXADataSource ds = new PGXADataSource();
         ds.setUrl(accountDataSourceProperties.getUrl());
         ds.setUser(accountDataSourceProperties.getUsername());
